@@ -114,6 +114,7 @@ const HomepageUrlAnalysis = () => {
         
         setAnalysisResults(fallbackResults);
       } else {
+        localStorage.setItem('lastAnalyzedUrl', url);
         setAnalysisResults(results);
       }
     } catch (error) {
