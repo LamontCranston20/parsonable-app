@@ -33,31 +33,30 @@ export async function fetchPageData(url) {
   }
 }
 
-/**
- * Analyzes robots.txt for AI crawler permissions
- * @param {string} url - The URL to analyze
- * @returns {Promise<Object>} Robots.txt analysis results
- */
 export async function analyzeRobotsTxt(url) {
   try {
-    // Call your new backend endpoint to fetch robots.txt content
-const response = await fetch(`/api/analyze-robots?url=${encodeURIComponent(url)}`);
-if (!response.ok) throw new Error('Backend fetch for robots.txt failed');
+    const response = await fetch(`/api/analyze-robots?url=${encodeURIComponent(url)}`);
 
-const { rawContent, status } = await response.json();
+    if (!response.ok) {
+      throw new Error('API call failed');
+    }
 
-// If no content was returned
-if (!rawContent || status === 'not_found') {
-  return {
-    status: 'not_found',
-    summary: 'No robots.txt file found. AI crawlers will use default permissions.',
-    details: [
-      { type: 'warning', message: 'No robots.txt file detected' },
-      { type: 'info', message: 'AI crawlers will assume default permissions' },
-      { type: 'suggestion', message: 'Consider adding robots.txt for explicit crawler control' }
-    ]
-  };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error analyzing robots.txt:', error);
+    return {
+      status: 'error',
+      summary: 'Unable to analyze robots.txt file.',
+      details: [
+        { type: 'error', message: 'Failed to fetch or parse robots.txt' },
+        { type: 'info', message: 'Analysis will continue with default assumptions' }
+      ],
+      rawContent: ''
+    };
+  }
 }
+
 
 const lines = rawContent.split('\n').map(line => line.trim());
 
