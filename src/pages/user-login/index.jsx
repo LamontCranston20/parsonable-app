@@ -11,14 +11,12 @@ const UserLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mock user credentials for demonstration
   const mockCredentials = {
     email: "demo@agentscanner.com",
     password: "demo123"
   };
 
   useEffect(() => {
-    // Check if user is already authenticated
     const token = localStorage.getItem('authToken');
     if (token) {
       const from = location.state?.from || '/user-dashboard';
@@ -31,17 +29,16 @@ const UserLogin = () => {
     setError('');
 
     try {
-      // Simulate social login API call
+      // Simulate API delay (later: use real Firebase/Auth0/supabase)
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful social login
+
       const mockUser = {
         id: 1,
         name: "John Doe",
-        email: "john.doe@example.com",
+        email: `${provider.toLowerCase()}_user@agentscanner.com`,
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
         subscription: "Premium Plan",
-        provider: provider
+        provider
       };
 
       localStorage.setItem('authToken', 'mock-jwt-token-' + Date.now());
@@ -64,11 +61,12 @@ const UserLogin = () => {
     setError('');
 
     try {
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Validate credentials
-      if (formData.email === mockCredentials.email && formData.password === mockCredentials.password) {
+      if (
+        formData.email === mockCredentials.email &&
+        formData.password === mockCredentials.password
+      ) {
         const mockUser = {
           id: 1,
           name: "Demo User",
@@ -81,7 +79,7 @@ const UserLogin = () => {
 
         localStorage.setItem('authToken', 'mock-jwt-token-' + Date.now());
         localStorage.setItem('userData', JSON.stringify(mockUser));
-        
+
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         }
@@ -101,18 +99,18 @@ const UserLogin = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
-        {/* Left side - Login Form */}
+        {/* Left: Login form */}
         <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-md space-y-8">
             <LoginHeader />
-            
+
             <div className="space-y-6">
               <SocialLoginButtons
                 onGoogleLogin={handleGoogleLogin}
                 onGithubLogin={handleGithubLogin}
                 isLoading={isLoading}
               />
-              
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
@@ -123,7 +121,7 @@ const UserLogin = () => {
                   </span>
                 </div>
               </div>
-              
+
               <LoginForm
                 onSubmit={handleFormSubmit}
                 isLoading={isLoading}
@@ -133,7 +131,7 @@ const UserLogin = () => {
           </div>
         </div>
 
-        {/* Right side - Benefits (Desktop only) */}
+        {/* Right: Benefits panel (only on large screens) */}
         <LoginBenefits />
       </div>
     </div>
