@@ -1,3 +1,4 @@
+import { performCompleteAnalysis } from '../../services/analysisService';
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import AuthenticationStateHeader from '../../components/ui/AuthenticationStateHeader';
@@ -10,7 +11,11 @@ import ActivityFeed from './components/ActivityFeed';
 import ProgressChart from './components/ProgressChart';
 
 const UserDashboard = () => {
-  const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [scans, setScans] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Mock user data
@@ -24,134 +29,57 @@ const UserDashboard = () => {
     lastLogin: new Date().toISOString()
   };
 
-  // Mock statistics data
-  const mockStats = {
-    totalScans: 47,
-    averageScore: 73,
-    monthlyScans: 12,
-    improvedSites: 8
+  useEffect(() => {
+  const loadDashboard = async () => {
+    try {
+      // Load user (still from localStorage for now)
+      const userData = localStorage.getItem('userData');
+      const parsedUser = userData ? JSON.parse(userData) : mockUser;
+      setUser(parsedUser);
+
+      const url = 'https://www.bbc.com'; // 🔁 Replace this with dynamic input later
+      const result = await performCompleteAnalysis(url);
+
+      // Build dashboard view from real result
+      setStats({
+        totalScans: 1,
+        averageScore: result.score,
+        monthlyScans: 1,
+        improvedSites: 0 // or calculate from activity
+      });
+
+      setScans([
+        {
+          id: 1,
+          url: url,
+          score: result.score,
+          date: new Date().toISOString(),
+          issues: result.aiSummary?.insights || []
+        }
+      ]);
+
+      setActivities([
+        {
+          id: 1,
+          type: "scan",
+          message: `Scanned ${url} with score ${result.score}/100`,
+          timestamp: new Date().toISOString()
+        }
+      ]);
+
+      setChartData([
+        { date: 'Today', score: result.score }
+      ]);
+    } catch (err) {
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock recent scans data
-  const mockScans = [
-    {
-      id: 1,
-      url: "https://techstartup.com",
-      score: 85,
-      date: "2025-01-15T10:30:00Z",
-      issues: ["Missing FAQ schema", "Robots.txt optimization"]
-    },
-    {
-      id: 2,
-      url: "https://ecommerce-store.com",
-      score: 72,
-      date: "2025-01-14T15:45:00Z",
-      issues: ["Product schema incomplete", "Meta descriptions", "Image alt tags"]
-    },
-    {
-      id: 3,
-      url: "https://consulting-firm.net",
-      score: 91,
-      date: "2025-01-13T09:20:00Z",
-      issues: ["Minor structured data"]
-    },
-    {
-      id: 4,
-      url: "https://restaurant-website.com",
-      score: 58,
-      date: "2025-01-12T14:10:00Z",
-      issues: ["Missing organization schema", "Poor crawlability", "No sitemap", "Meta tags missing"]
-    },
-    {
-      id: 5,
-      url: "https://portfolio-site.dev",
-      score: 79,
-      date: "2025-01-11T11:30:00Z",
-      issues: ["Social media meta tags", "Schema markup"]
-    },
-    {
-      id: 6,
-      url: "https://news-blog.org",
-      score: 66,
-      date: "2025-01-10T16:20:00Z",
-      issues: ["Article schema", "Breadcrumb navigation", "Image optimization"]
-    }
-  ];
+  loadDashboard();
+}, []);
 
-  // Mock activity feed data
-  const mockActivities = [
-    {
-      id: 1,
-      type: "scan",
-      message: "Completed analysis for techstartup.com with score 85/100",
-      timestamp: "2025-01-15T10:30:00Z"
-    },
-    {
-      id: 2,
-      type: "improvement",
-      message: "ecommerce-store.com score improved from 65 to 72",
-      timestamp: "2025-01-14T15:45:00Z"
-    },
-    {
-      id: 3,
-      type: "report",
-      message: "Downloaded PDF report for consulting-firm.net",
-      timestamp: "2025-01-13T09:20:00Z"
-    },
-    {
-      id: 4,
-      type: "scan",
-      message: "New analysis started for restaurant-website.com",
-      timestamp: "2025-01-12T14:10:00Z"
-    },
-    {
-      id: 5,
-      type: "account",
-      message: "Upgraded to Pro Plan subscription",
-      timestamp: "2025-01-10T12:00:00Z"
-    },
-    {
-      id: 6,
-      type: "improvement",
-      message: "portfolio-site.dev achieved 79/100 score",
-      timestamp: "2025-01-11T11:30:00Z"
-    }
-  ];
-
-  // Mock chart data
-  const mockChartData = [
-    { date: "Jan 1", score: 65 },
-    { date: "Jan 3", score: 68 },
-    { date: "Jan 5", score: 71 },
-    { date: "Jan 7", score: 69 },
-    { date: "Jan 9", score: 74 },
-    { date: "Jan 11", score: 79 },
-    { date: "Jan 13", score: 91 },
-    { date: "Jan 15", score: 85 }
-  ];
-
-  useEffect(() => {
-    // Simulate loading user data
-    const loadUserData = async () => {
-      try {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          setUser(JSON.parse(userData));
-        } else {
-          // Use mock data if no user data in localStorage
-          setUser(mockUser);
-          localStorage.setItem('userData', JSON.stringify(mockUser));
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        setUser(mockUser);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserData();
-  }, []);
 
   if (loading) {
     return (
@@ -182,20 +110,20 @@ const UserDashboard = () => {
           
           <WelcomeCard user={user} />
           
-          <StatsCards stats={mockStats} />
+          <StatsCards stats={stats} />
           
           <QuickActions />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <RecentScans scans={mockScans} />
+              <RecentScans scans={scans} />
             </div>
             <div className="lg:col-span-1">
-              <ActivityFeed activities={mockActivities} />
+              <ActivityFeed activities={activities} />
             </div>
           </div>
           
-          <ProgressChart chartData={mockChartData} />
+          <ProgressChart chartData={chartData} />
         </div>
       </main>
     </div>
