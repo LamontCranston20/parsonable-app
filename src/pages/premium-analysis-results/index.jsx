@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { performCompleteAnalysis } from '../../services/analysisService';
 import AuthenticationStateHeader from '../../components/ui/AuthenticationStateHeader';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import ProtectedRouteWrapper from '../../components/ui/ProtectedRouteWrapper';
@@ -14,8 +15,6 @@ import ImprovementRecommendations from './components/ImprovementRecommendations'
 import TechnicalMetadataAnalysis from './components/TechnicalMetadataAnalysis';
 import ExportFunctionality from './components/ExportFunctionality';
 
-import { performCompleteAnalysis } from '../../services/analysisService';
-
 const PremiumAnalysisResults = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,39 +22,26 @@ const PremiumAnalysisResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { url } = location.state || {};
-
   useEffect(() => {
-    const loadAnalysisData = async () => {
-      if (!url) {
-        console.error('No URL provided to premium results page.');
-        setIsLoading(false);
-        return;
-      }
+    const url = location.state?.url;
+    if (!url) {
+      navigate('/homepage-url-analysis');
+      return;
+    }
 
+    const loadAnalysis = async () => {
       try {
-        const result = await performCompleteAnalysis(url);
-
-        if (result?.error) {
-          console.error('Analysis failed:', result.message);
-          setAnalysisData(null);
-        } else {
-          setAnalysisData({
-            ...result,
-            url,
-            analyzedAt: new Date().toISOString()
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch analysis:', error);
-        setAnalysisData(null);
+        const data = await performCompleteAnalysis(url);
+        setAnalysisData(data);
+      } catch (err) {
+        console.error('Error loading analysis:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadAnalysisData();
-  }, [url]);
+    loadAnalysis();
+  }, [location, navigate]);
 
   const sections = [
     { id: 'overview', label: 'Overview', icon: 'BarChart3' },
@@ -67,25 +53,15 @@ const PremiumAnalysisResults = () => {
     { id: 'export', label: 'Export', icon: 'Download' }
   ];
 
-  if (!url) {
-    navigate('/homepage-url-analysis');
-    return null;
-  }
-
   if (isLoading) {
     return (
       <ProtectedRouteWrapper>
         <div className="min-h-screen bg-background">
           <AuthenticationStateHeader />
-          <div className="pt-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <h2 className="text-xl font-semibold text-foreground mb-2">Loading Analysis Results</h2>
-                  <p className="text-muted-foreground">Please wait while we prepare your comprehensive report...</p>
-                </div>
-              </div>
+          <div className="pt-16 flex items-center justify-center min-h-screen">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-muted-foreground">Loading your results...</p>
             </div>
           </div>
         </div>
@@ -98,24 +74,13 @@ const PremiumAnalysisResults = () => {
       <ProtectedRouteWrapper>
         <div className="min-h-screen bg-background">
           <AuthenticationStateHeader />
-          <div className="pt-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="text-center py-12">
-                <Icon name="AlertTriangle" size={48} className="text-warning mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">No Analysis Data Found</h2>
-                <p className="text-muted-foreground mb-6">
-                  We couldn't find any analysis results. Please run a new analysis.
-                </p>
-                <Button
-                  variant="default"
-                  onClick={() => navigate('/homepage-url-analysis')}
-                  iconName="Search"
-                  iconPosition="left"
-                >
-                  Start New Analysis
-                </Button>
-              </div>
-            </div>
+          <div className="pt-16 text-center py-12">
+            <Icon name="AlertTriangle" size={48} className="text-warning mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">No Analysis Data Found</h2>
+            <p className="text-muted-foreground mb-6">Try running a new analysis.</p>
+            <Button onClick={() => navigate('/homepage-url-analysis')} iconName="Search" iconPosition="left">
+              Start New Analysis
+            </Button>
           </div>
         </div>
       </ProtectedRouteWrapper>
@@ -130,108 +95,82 @@ const PremiumAnalysisResults = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <NavigationBreadcrumbs />
 
-            {/* Page Header */}
-            <div className="mb-8">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">Premium Analysis Results</h1>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <span>URL: {analysisData.url}</span>
-                    <span>•</span>
-                    <span>Analyzed: {new Date(analysisData.analyzedAt).toLocaleDateString()}</span>
-                    <span>•</span>
-                    <span className={`font-medium ${
-                      analysisData.overallScore >= 80 ? 'text-success' :
-                      analysisData.overallScore >= 60 ? 'text-warning' : 'text-destructive'
-                    }`}>
-                      Score: {analysisData.overallScore}/100
-                    </span>
-                  </div>
+            {/* Header */}
+            <div className="mb-8 flex justify-between flex-wrap items-center">
+              <div>
+                <h1 className="text-3xl font-bold">Premium Analysis Results</h1>
+                <div className="text-sm text-muted-foreground space-x-2">
+                  <span>URL: {analysisData.url}</span>
+                  <span>•</span>
+                  <span>Analyzed: {new Date(analysisData.analyzedAt).toLocaleDateString()}</span>
+                  <span>•</span>
+                  <span className={`font-medium ${
+                    analysisData.overallScore >= 80 ? 'text-success' :
+                    analysisData.overallScore >= 60 ? 'text-warning' : 'text-destructive'
+                  }`}>
+                    Score: {analysisData.overallScore}/100
+                  </span>
                 </div>
-                <div className="mt-4 lg:mt-0 flex items-center space-x-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/homepage-url-analysis')}
-                    iconName="Plus"
-                    iconPosition="left"
-                  >
-                    New Analysis
-                  </Button>
-                  <Button
-                    variant="default"
-                    onClick={() => setActiveSection('export')}
-                    iconName="Download"
-                    iconPosition="left"
-                  >
-                    Export Report
-                  </Button>
-                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-4 lg:mt-0">
+                <Button onClick={() => navigate('/homepage-url-analysis')} iconName="Plus" iconPosition="left">
+                  New Analysis
+                </Button>
+                <Button onClick={() => setActiveSection('export')} iconName="Download" iconPosition="left">
+                  Export Report
+                </Button>
               </div>
             </div>
 
-            {/* Section Navigation */}
-            <div className="mb-8">
-              <div className="flex flex-wrap gap-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                      activeSection === section.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    <Icon name={section.icon} size={16} />
-                    <span>{section.label}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Section Tabs */}
+            <div className="mb-6 flex flex-wrap gap-2">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 transition-colors ${
+                    activeSection === section.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <Icon name={section.icon} size={16} />
+                  <span>{section.label}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Content Sections */}
+            {/* Section Content */}
             <div className="space-y-6">
-              {(activeSection === 'overview' || activeSection === 'all') && (
+              {activeSection === 'overview' && (
                 <AgentReadinessScore
                   overallScore={analysisData.overallScore}
                   categoryScores={analysisData.categoryScores}
-                  trends={analysisData.trends}
                 />
               )}
-
-              {(activeSection === 'structured-data' || activeSection === 'all') && (
+              {activeSection === 'structured-data' && (
                 <StructuredDataSection structuredData={analysisData.structuredData} />
               )}
-
-              {(activeSection === 'robots' || activeSection === 'all') && (
+              {activeSection === 'robots' && (
                 <RobotsAnalysis robotsData={analysisData.robotsData} />
               )}
-
-              {(activeSection === 'ai-summary' || activeSection === 'all') && (
+              {activeSection === 'ai-summary' && (
                 <EnhancedAISummary summaryData={analysisData.summaryData} />
               )}
-
-              {(activeSection === 'recommendations' || activeSection === 'all') && (
+              {activeSection === 'recommendations' && (
                 <ImprovementRecommendations recommendations={analysisData.recommendations} />
               )}
-
-              {(activeSection === 'metadata' || activeSection === 'all') && (
+              {activeSection === 'metadata' && (
                 <TechnicalMetadataAnalysis metadataData={analysisData.metadataData} />
               )}
-
-              {(activeSection === 'export' || activeSection === 'all') && (
+              {activeSection === 'export' && (
                 <ExportFunctionality analysisData={analysisData} />
               )}
             </div>
 
-            {/* Back to Dashboard */}
             <div className="mt-12 pt-8 border-t border-border text-center">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/user-dashboard')}
-                iconName="ArrowLeft"
-                iconPosition="left"
-              >
+              <Button onClick={() => navigate('/user-dashboard')} iconName="ArrowLeft" iconPosition="left" variant="outline">
                 Back to Dashboard
               </Button>
             </div>
