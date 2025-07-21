@@ -11,75 +11,79 @@ import ActivityFeed from './components/ActivityFeed';
 import ProgressChart from './components/ProgressChart';
 
 const UserDashboard = () => {
-    const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [scans, setScans] = useState([]);
   const [activities, setActivities] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock user data
-  const mockUser = {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
-    subscription: "Pro Plan",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b9c3c8e4?w=150&h=150&fit=crop&crop=face",
-    joinDate: "2024-01-15",
-    lastLogin: new Date().toISOString()
-  };
-
   useEffect(() => {
-  const loadDashboard = async () => {
-    try {
-      // Load user (still from localStorage for now)
-      const userData = localStorage.getItem('userData');
-      const parsedUser = userData ? JSON.parse(userData) : mockUser;
-      setUser(parsedUser);
-
-      const url = 'https://www.bbc.com'; // 🔁 Replace this with dynamic input later
-      const result = await performCompleteAnalysis(url);
-
-      // Build dashboard view from real result
-      setStats({
-        totalScans: 1,
-        averageScore: result.score,
-        monthlyScans: 1,
-        improvedSites: 0 // or calculate from activity
-      });
-
-      setScans([
-        {
+    const loadDashboard = async () => {
+      try {
+        // Load user (real auth can replace this later)
+        const userData = localStorage.getItem('userData');
+        const parsedUser = userData ? JSON.parse(userData) : {
           id: 1,
-          url: url,
-          score: result.score,
-          date: new Date().toISOString(),
-          issues: result.aiSummary?.insights || []
+          name: "Sarah Johnson",
+          email: "sarah.johnson@example.com",
+          subscription: "Pro Plan",
+          avatar: "https://images.unsplash.com/photo-1494790108755-2616b9c3c8e4?w=150&h=150&fit=crop&crop=face",
+          joinDate: "2024-01-15",
+          lastLogin: new Date().toISOString()
+        };
+        setUser(parsedUser);
+
+        // For now: hardcoded example domain
+        const url = 'https://www.bbc.com';
+        const result = await performCompleteAnalysis(url);
+
+        if (!result || result.error) {
+          console.error('Analysis failed or returned no data.');
+          setLoading(false);
+          return;
         }
-      ]);
 
-      setActivities([
-        {
-          id: 1,
-          type: "scan",
-          message: `Scanned ${url} with score ${result.score}/100`,
-          timestamp: new Date().toISOString()
-        }
-      ]);
+        const today = new Date().toISOString();
 
-      setChartData([
-        { date: 'Today', score: result.score }
-      ]);
-    } catch (err) {
-      console.error("Error loading dashboard data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setStats({
+          totalScans: 1,
+          averageScore: result.overallScore,
+          monthlyScans: 1,
+          improvedSites: 0
+        });
 
-  loadDashboard();
-}, []);
+        setScans([
+          {
+            id: 1,
+            url,
+            score: result.overallScore,
+            date: today,
+            issues: result?.summaryData?.nextSteps || []
+          }
+        ]);
 
+        setActivities([
+          {
+            id: 1,
+            type: "scan",
+            message: `Scanned ${url} — Score: ${result.overallScore}/100`,
+            timestamp: today
+          }
+        ]);
+
+        setChartData([
+          { date: 'Today', score: result.overallScore }
+        ]);
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
 
   if (loading) {
     return (
@@ -103,17 +107,17 @@ const UserDashboard = () => {
       </Helmet>
 
       <AuthenticationStateHeader />
-      
+
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <NavigationBreadcrumbs />
-          
+
           <WelcomeCard user={user} />
-          
+
           <StatsCards stats={stats} />
-          
+
           <QuickActions />
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
               <RecentScans scans={scans} />
@@ -122,7 +126,7 @@ const UserDashboard = () => {
               <ActivityFeed activities={activities} />
             </div>
           </div>
-          
+
           <ProgressChart chartData={chartData} />
         </div>
       </main>
