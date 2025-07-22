@@ -43,7 +43,6 @@ useEffect(() => {
 
         if (!data || typeof data !== 'object') {
           throw new Error('Analysis data is undefined or invalid');
-        }
 
         setAnalysisData({ ...data, url, analyzedAt: new Date() });
       } catch (err) {
