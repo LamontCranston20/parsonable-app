@@ -52,6 +52,9 @@ const lines = robotsText.split('\n').map(line => line.trim());
 
     
     const response = await Promise.race([fetchPromise, timeoutPromise]);
+    if (response.type === 'opaque' || response.status === 0) {
+  throw new Error('CORS blocked or no response');
+}
     
     if (!response.ok) {
       return {
