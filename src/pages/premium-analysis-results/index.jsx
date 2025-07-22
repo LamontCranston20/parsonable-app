@@ -22,22 +22,45 @@ const PremiumAnalysisResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let url = location.state?.url;
+useEffect(() => {
+  try {
+    let url = location?.state?.url;
 
     if (!url) {
       url = localStorage.getItem('lastAnalyzedUrl');
     }
 
     if (!url) {
-      const queryParams = new URLSearchParams(location.search);
-      url = queryParams.get('url');
-    }
-
-    if (!url) {
+      console.warn("No URL found in location.state or localStorage. Redirecting.");
       navigate('/homepage-url-analysis');
       return;
     }
+
+    const loadAnalysis = async () => {
+      try {
+        console.log("Loading analysis for:", url);
+        const data = await performCompleteAnalysis(url);
+
+        if (!data || typeof data !== 'object') {
+          throw new Error('Analysis data is undefined or invalid');
+        }
+
+        setAnalysisData({ ...data, url, analyzedAt: new Date() });
+      } catch (err) {
+        console.error('Error during performCompleteAnalysis:', err);
+        setAnalysisData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAnalysis();
+  } catch (outerErr) {
+    console.error('Unexpected error in PremiumAnalysisResults useEffect:', outerErr);
+    setIsLoading(false);
+  }
+}, [location, navigate]);
+
 
     const loadAnalysis = async () => {
       try {
