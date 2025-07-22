@@ -22,51 +22,32 @@ const PremiumAnalysisResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-useEffect(() => {
-  try {
-    let url = location?.state?.url;
-
-    if (!url) {
-      url = localStorage.getItem('lastAnalyzedUrl');
-    }
-
-    if (!url) {
-      console.warn("No URL found in location.state or localStorage. Redirecting.");
-      navigate('/homepage-url-analysis');
-      return;
-    }
-
+  useEffect(() => {
     const loadAnalysis = async () => {
       try {
+        let url = location?.state?.url;
+
+        if (!url) {
+          url = localStorage.getItem('lastAnalyzedUrl');
+        }
+
+        if (!url) {
+          console.warn("No URL found in location.state or localStorage. Redirecting.");
+          navigate('/homepage-url-analysis');
+          return;
+        }
+
         console.log("Loading analysis for:", url);
         const data = await performCompleteAnalysis(url);
 
         if (!data || typeof data !== 'object') {
           throw new Error('Analysis data is undefined or invalid');
+        }
 
         setAnalysisData({ ...data, url, analyzedAt: new Date() });
       } catch (err) {
         console.error('Error during performCompleteAnalysis:', err);
         setAnalysisData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAnalysis();
-  } catch (outerErr) {
-    console.error('Unexpected error in PremiumAnalysisResults useEffect:', outerErr);
-    setIsLoading(false);
-  }
-}, [location, navigate]);
-
-
-    const loadAnalysis = async () => {
-      try {
-        const data = await performCompleteAnalysis(url);
-        setAnalysisData({ ...data, url, analyzedAt: new Date() });
-      } catch (err) {
-        console.error('Error loading analysis:', err);
       } finally {
         setIsLoading(false);
       }
