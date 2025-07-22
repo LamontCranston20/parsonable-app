@@ -2,6 +2,15 @@ import React from 'react';
 import Icon from '../../../components/AppIcon';
 
 const AgentReadinessScore = ({ overallScore, categoryScores }) => {
+    if (!Array.isArray(categoryScores)) {
+    return (
+      <div className="border border-orange-400 text-orange-600 p-4 rounded-md bg-orange-50">
+        <strong>Missing readiness data</strong><br />
+        We couldn't display the category breakdown. Try analyzing a different page.
+      </div>
+    );
+  }
+
   if (!Array.isArray(categoryScores)) {
     console.error("AgentReadinessScore: categoryScores is not an array", categoryScores);
     return (
