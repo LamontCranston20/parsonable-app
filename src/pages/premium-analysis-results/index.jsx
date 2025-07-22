@@ -23,30 +23,35 @@ const PremiumAnalysisResults = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-  let url = location.state?.url;
+    let url = location.state?.url;
 
-  if (!url) {
-    url = localStorage.getItem('lastAnalyzedUrl');
-  }
-
-  if (!url) {
-    navigate('/homepage-url-analysis');
-    return;
-  }
-
-  const loadAnalysis = async () => {
-    try {
-      const data = await performCompleteAnalysis(url);
-      setAnalysisData({ ...data, url, analyzedAt: new Date() }); // add fallback fields if needed
-    } catch (err) {
-      console.error('Error loading analysis:', err);
-    } finally {
-      setIsLoading(false);
+    if (!url) {
+      url = localStorage.getItem('lastAnalyzedUrl');
     }
-  };
 
-  loadAnalysis();
-}, [location, navigate]);
+    if (!url) {
+      const queryParams = new URLSearchParams(location.search);
+      url = queryParams.get('url');
+    }
+
+    if (!url) {
+      navigate('/homepage-url-analysis');
+      return;
+    }
+
+    const loadAnalysis = async () => {
+      try {
+        const data = await performCompleteAnalysis(url);
+        setAnalysisData({ ...data, url, analyzedAt: new Date() });
+      } catch (err) {
+        console.error('Error loading analysis:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAnalysis();
+  }, [location, navigate]);
 
   const sections = [
     { id: 'overview', label: 'Overview', icon: 'BarChart3' },
