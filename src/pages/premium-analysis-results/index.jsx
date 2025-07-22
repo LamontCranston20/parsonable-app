@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { performCompleteAnalysis } from '../../services/analysisService';
 import AuthenticationStateHeader from '../../components/ui/AuthenticationStateHeader';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import ProtectedRouteWrapper from '../../components/ui/ProtectedRouteWrapper';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { performCompleteAnalysis } from '../../services/analysisService';
 
+// Section components
 import AgentReadinessScore from './components/AgentReadinessScore';
 import StructuredDataSection from './components/StructuredDataSection';
 import RobotsAnalysis from './components/RobotsAnalysis';
@@ -25,28 +26,21 @@ const PremiumAnalysisResults = () => {
   useEffect(() => {
     const loadAnalysis = async () => {
       try {
-        let url = location?.state?.url;
-
+        let url = location?.state?.url || localStorage.getItem('lastAnalyzedUrl');
         if (!url) {
-          url = localStorage.getItem('lastAnalyzedUrl');
-        }
-
-        if (!url) {
-          console.warn("No URL found in location.state or localStorage. Redirecting.");
+          console.warn("No URL provided. Redirecting...");
           navigate('/homepage-url-analysis');
           return;
         }
 
-        console.log("Loading analysis for:", url);
         const data = await performCompleteAnalysis(url);
-
         if (!data || typeof data !== 'object') {
-          throw new Error('Analysis data is undefined or invalid');
+          throw new Error("Invalid analysis data");
         }
 
         setAnalysisData({ ...data, url, analyzedAt: new Date() });
       } catch (err) {
-        console.error('Error during performCompleteAnalysis:', err);
+        console.error("Analysis load error:", err);
         setAnalysisData(null);
       } finally {
         setIsLoading(false);
@@ -108,7 +102,6 @@ const PremiumAnalysisResults = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <NavigationBreadcrumbs />
 
-            {/* Header */}
             <div className="mb-8 flex justify-between flex-wrap items-center">
               <div>
                 <h1 className="text-3xl font-bold">Premium Analysis Results</h1>
@@ -136,7 +129,6 @@ const PremiumAnalysisResults = () => {
               </div>
             </div>
 
-            {/* Section Tabs */}
             <div className="mb-6 flex flex-wrap gap-2">
               {sections.map((section) => (
                 <button
@@ -154,7 +146,6 @@ const PremiumAnalysisResults = () => {
               ))}
             </div>
 
-            {/* Section Content */}
             <div className="space-y-6">
               {activeSection === 'overview' && (
                 <AgentReadinessScore
