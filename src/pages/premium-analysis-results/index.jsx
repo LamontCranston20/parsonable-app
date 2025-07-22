@@ -25,19 +25,18 @@ const PremiumAnalysisResults = () => {
 
   useEffect(() => {
     const loadAnalysis = async () => {
-  try {
-    const data = await performCompleteAnalysis(url);
-    console.log("Full analysis data received:", data); // 👈 add this line
-    setAnalysisData({ ...data, url, analyzedAt: new Date() });
-  } catch (err) {
-    console.error('Error loading analysis:', err);
-    setAnalysisData(null);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      try {
+        let url = location?.state?.url || localStorage.getItem('lastAnalyzedUrl');
+
+        if (!url) {
+          console.warn("No URL provided. Redirecting to homepage.");
+          navigate('/homepage-url-analysis');
+          return;
+        }
 
         const data = await performCompleteAnalysis(url);
+        console.log("Full analysis data received:", data);
+
         if (!data || typeof data !== 'object') {
           throw new Error("Invalid analysis data");
         }
