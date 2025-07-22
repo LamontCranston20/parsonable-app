@@ -40,22 +40,16 @@ export async function fetchPageData(url) {
  */
 export async function analyzeRobotsTxt(url) {
   try {
-    const robotsUrl = new URL('/robots.txt', url).toString();
-    
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Request timeout')), 10000);
-    });
-    
-    // Attempt to fetch robots.txt with timeout
-    const fetchPromise = fetch(robotsUrl, {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache',
-      headers: {
-        'Accept': 'text/plain',
-      },
-    });
+const apiUrl = `/api/fetch-robots?target=${encodeURIComponent(url)}`;
+const response = await fetch(apiUrl);
+
+if (!response.ok) {
+  throw new Error('Failed to fetch robots.txt from backend');
+}
+
+const { robotsText } = await response.json();
+const lines = robotsText.split('\n').map(line => line.trim());
+
     
     const response = await Promise.race([fetchPromise, timeoutPromise]);
     
