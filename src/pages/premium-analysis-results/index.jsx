@@ -150,18 +150,20 @@ const PremiumAnalysisResults = () => {
             </div>
 
             <div className="space-y-6">
-              {activeSection === 'overview' && (
-              {analysisData.overallScore && analysisData.categoryScores ? (
-  <AgentReadinessScore
-    overallScore={analysisData.overallScore}
-    categoryScores={analysisData.categoryScores}
-  />
-) : (
-  <div className="bg-muted text-muted-foreground p-4 rounded-md">
-    <p className="font-semibold mb-2">Missing readiness data</p>
-    <p>We couldn't display the category breakdown. Try analyzing a different page.</p>
-  </div>
+            {activeSection === 'overview' && (
+  analysisData?.overallScore && analysisData?.categoryScores ? (
+    <AgentReadinessScore
+      overallScore={analysisData.overallScore}
+      categoryScores={analysisData.categoryScores}
+    />
+  ) : (
+    <div className="bg-muted text-muted-foreground p-4 rounded-md">
+      <p className="font-semibold mb-2">Missing readiness data</p>
+      <p>We couldn't display the category breakdown. Try analyzing a different page.</p>
+    </div>
+  )
 )}
+
               {activeSection === 'structured-data' && (
                 <StructuredDataSection structuredData={analysisData.structuredData} />
               )}
