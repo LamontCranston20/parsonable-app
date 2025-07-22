@@ -162,7 +162,6 @@ const PremiumAnalysisResults = () => {
     <p>We couldn't display the category breakdown. Try analyzing a different page.</p>
   </div>
 )}
-              )}
               {activeSection === 'structured-data' && (
                 <StructuredDataSection structuredData={analysisData.structuredData} />
               )}
