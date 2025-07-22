@@ -2,32 +2,20 @@ import { generateImprovementSuggestions, generateAIAgentSummary, analyzeStructur
 
 /**
  * Fetches page content and metadata for analysis
- * @param {string} url - The URL to analyze
- * @returns {Promise<Object>} Page data including content, metadata, and structure
  */
 export async function fetchPageData(url) {
   try {
-    // In a real implementation, this would fetch actual page data
-    // For now, we'll simulate the data structure
     const response = await fetch(`/api/analyze-page?url=${encodeURIComponent(url)}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch page data');
-    }
-    
+    if (!response.ok) throw new Error('Failed to fetch page data');
     const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error fetching page data:', error);
-    // Return mock data structure for development
     return {
       title: 'Sample Page Title',
       description: 'Sample meta description',
       content: 'Sample page content for analysis',
-      structuredData: {
-        '@type': 'WebPage',
-        'name': 'Sample Page'
-      },
+      structuredData: { '@type': 'WebPage', name: 'Sample Page' },
       keyElements: ['navigation', 'content', 'footer']
     };
   }
@@ -35,89 +23,54 @@ export async function fetchPageData(url) {
 
 /**
  * Analyzes robots.txt for AI crawler permissions
- * @param {string} url - The URL to analyze
- * @returns {Promise<Object>} Robots.txt analysis results
  */
 export async function analyzeRobotsTxt(url) {
   try {
-const apiUrl = `/api/fetch-robots?target=${encodeURIComponent(url)}`;
-const response = await fetch(apiUrl);
+    const apiUrl = `/api/fetch-robots?target=${encodeURIComponent(url)}`;
+    const response = await fetch(apiUrl);
 
-if (!response.ok) {
-  throw new Error('Failed to fetch robots.txt from backend');
-}
-
-const { robotsText } = await response.json();
-const lines = robotsText.split('\n').map(line => line.trim());
-
-    
-    const response = await Promise.race([fetchPromise, timeoutPromise]);
-    if (response.type === 'opaque' || response.status === 0) {
-  throw new Error('CORS blocked or no response');
-}
-    
     if (!response.ok) {
-      return {
-        status: 'not_found',
-        summary: 'No robots.txt file found. AI crawlers will use default permissions.',
-        details: [
-          { type: 'warning', message: 'No robots.txt file detected' },
-          { type: 'info', message: 'AI crawlers will assume default permissions' },
-          { type: 'suggestion', message: 'Consider adding robots.txt for explicit crawler control' }
-        ]
-      };
+      throw new Error('Failed to fetch robots.txt from backend');
     }
-    
-    const robotsText = await response.text();
+
+    const { robotsText } = await response.json();
     const lines = robotsText.split('\n').map(line => line.trim());
-    
-    // Check for AI crawler permissions
+
     const aiCrawlers = ['GPTBot', 'PerplexityBot', 'GoogleBot', 'BingBot'];
     const permissions = {};
-    
     let currentUserAgent = '*';
+
     for (const line of lines) {
       if (line.startsWith('User-agent:')) {
         currentUserAgent = line.split(':')[1].trim();
       } else if (line.startsWith('Disallow:')) {
         const path = line.split(':')[1].trim();
-        if (!permissions[currentUserAgent]) {
-          permissions[currentUserAgent] = [];
-        }
+        permissions[currentUserAgent] = permissions[currentUserAgent] || [];
         permissions[currentUserAgent].push({ type: 'disallow', path });
       } else if (line.startsWith('Allow:')) {
         const path = line.split(':')[1].trim();
-        if (!permissions[currentUserAgent]) {
-          permissions[currentUserAgent] = [];
-        }
+        permissions[currentUserAgent] = permissions[currentUserAgent] || [];
         permissions[currentUserAgent].push({ type: 'allow', path });
       }
     }
-    
-    // Analyze permissions for AI crawlers
+
     const details = [];
     let allowedCount = 0;
-    
+
     for (const crawler of aiCrawlers) {
       const crawlerPermissions = permissions[crawler] || permissions['*'] || [];
       const isBlocked = crawlerPermissions.some(p => p.type === 'disallow' && p.path === '/');
-      
+
       if (isBlocked) {
-        details.push({
-          type: 'error',
-          message: `${crawler} is blocked from crawling your site`
-        });
+        details.push({ type: 'error', message: `${crawler} is blocked from crawling your site` });
       } else {
-        details.push({
-          type: 'success',
-          message: `${crawler} is allowed to crawl your site`
-        });
+        details.push({ type: 'success', message: `${crawler} is allowed to crawl your site` });
         allowedCount++;
       }
     }
-    
+
     const status = allowedCount > aiCrawlers.length / 2 ? 'mostly_allowed' : 'mostly_blocked';
-    
+
     return {
       status,
       summary: `${allowedCount} out of ${aiCrawlers.length} major AI crawlers are allowed to access your site.`,
@@ -126,8 +79,7 @@ const lines = robotsText.split('\n').map(line => line.trim());
     };
   } catch (error) {
     console.error('Error analyzing robots.txt:', error);
-    
-    // Handle specific error types
+
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       return {
         status: 'cors_blocked',
@@ -139,7 +91,7 @@ const lines = robotsText.split('\n').map(line => line.trim());
         ]
       };
     }
-    
+
     if (error.message === 'Request timeout') {
       return {
         status: 'timeout',
@@ -151,8 +103,7 @@ const lines = robotsText.split('\n').map(line => line.trim());
         ]
       };
     }
-    
-    // Generic error fallback
+
     return {
       status: 'error',
       summary: 'Unable to analyze robots.txt file.',
@@ -166,98 +117,50 @@ const lines = robotsText.split('\n').map(line => line.trim());
 }
 
 /**
- * Performs complete website analysis for AI optimization
- * @param {string} url - The URL to analyze
- * @returns {Promise<Object>} Complete analysis results
+ * Performs complete website analysis
  */
 export async function performCompleteAnalysis(url) {
   try {
-    // Validate URL first
-    if (!url || typeof url !== 'string') {
-      throw new Error('Invalid URL provided');
-    }
-    
-    // Ensure URL has protocol
-    let validUrl = url;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      validUrl = 'https://' + url;
-    }
-    
-    // Test if URL is valid
-    try {
-      new URL(validUrl);
-    } catch (urlError) {
-      throw new Error('Invalid URL format');
-    }
-    
-    // Fetch page data with error handling
-    let pageData;
-    try {
-      pageData = await fetchPageData(validUrl);
-    } catch (error) {
-      console.error('Failed to fetch page data:', error);
-      pageData = {
-        title: 'Unable to fetch page title',
-        description: 'Unable to fetch page description',
-        content: 'Unable to fetch page content',
-        structuredData: null,
-        keyElements: []
-      };
-    }
-    
-    // Analyze robots.txt with error handling
-    let robotsAnalysis;
-    try {
-      robotsAnalysis = await analyzeRobotsTxt(validUrl);
-    } catch (error) {
-      console.error('Failed to analyze robots.txt:', error);
-      robotsAnalysis = {
-        status: 'error',
-        summary: 'Unable to analyze robots.txt file.',
-        details: [
-          { type: 'error', message: 'Failed to analyze robots.txt' },
-          { type: 'info', message: 'Analysis will continue with default assumptions' }
-        ]
-      };
-    }
-    
-    // Generate AI analysis with error handling
-    let aiSummary;
-    try {
-      aiSummary = await generateAIAgentSummary(validUrl, pageData);
-    } catch (error) {
-      console.error('Failed to generate AI summary:', error);
-      aiSummary = 'Unable to generate AI analysis summary due to service limitations.';
-    }
-    
-    // Generate improvement suggestions with error handling
-    let suggestions;
-    try {
-      suggestions = await generateImprovementSuggestions(validUrl, {
-        score: 75,
-        hasStructuredData: !!pageData.structuredData,
-        robotsStatus: robotsAnalysis.status
-      });
-    } catch (error) {
-      console.error('Failed to generate suggestions:', error);
-      suggestions = [
-        'Add comprehensive meta descriptions',
-        'Implement structured data markup',
-        'Optimize page titles with descriptive content',
-        'Ensure robots.txt allows AI crawler access'
-      ];
-    }
-    
-    // Analyze structured data with error handling
-    let structuredDataAnalysis;
-    try {
-      structuredDataAnalysis = await analyzeStructuredData(pageData.structuredData);
-    } catch (error) {
-      console.error('Failed to analyze structured data:', error);
-      structuredDataAnalysis = 'Unable to analyze structured data due to service limitations.';
-    }
-    
-    // Calculate overall score based on various factors
+    if (!url || typeof url !== 'string') throw new Error('Invalid URL provided');
+    let validUrl = url.startsWith('http') ? url : 'https://' + url;
+    new URL(validUrl);
+
+    let pageData = await fetchPageData(validUrl).catch(() => ({
+      title: 'Unable to fetch page title',
+      description: 'Unable to fetch page description',
+      content: 'Unable to fetch page content',
+      structuredData: null,
+      keyElements: []
+    }));
+
+    let robotsAnalysis = await analyzeRobotsTxt(validUrl).catch(() => ({
+      status: 'error',
+      summary: 'Unable to analyze robots.txt file.',
+      details: [
+        { type: 'error', message: 'Failed to analyze robots.txt' },
+        { type: 'info', message: 'Analysis will continue with default assumptions' }
+      ]
+    }));
+
+    let aiSummary = await generateAIAgentSummary(validUrl, pageData).catch(() =>
+      'Unable to generate AI analysis summary due to service limitations.'
+    );
+
+    let suggestions = await generateImprovementSuggestions(validUrl, {
+      score: 75,
+      hasStructuredData: !!pageData.structuredData,
+      robotsStatus: robotsAnalysis.status
+    }).catch(() => [
+      'Add comprehensive meta descriptions',
+      'Implement structured data markup',
+      'Optimize page titles with descriptive content',
+      'Ensure robots.txt allows AI crawler access'
+    ]);
+
+    let structuredDataAnalysis = await analyzeStructuredData(pageData.structuredData).catch(() =>
+      'Unable to analyze structured data due to service limitations.'
+    );
+
     const score = calculateAIReadinessScore({
       hasStructuredData: !!pageData.structuredData,
       robotsStatus: robotsAnalysis.status,
@@ -265,7 +168,7 @@ export async function performCompleteAnalysis(url) {
       hasTitle: !!pageData.title,
       contentLength: pageData.content?.length || 0
     });
-    
+
     return {
       score,
       structuredData: {
@@ -283,143 +186,79 @@ export async function performCompleteAnalysis(url) {
     };
   } catch (error) {
     console.error('Error performing complete analysis:', error);
-    
-    // Return structured error response instead of throwing
     return {
       error: true,
       message: error.message || 'Analysis failed. Please try again.',
       score: 0,
       structuredData: {
         summary: "Unable to analyze structured data",
-        details: [
-          { type: 'error', message: 'Analysis service temporarily unavailable' }
-        ],
+        details: [{ type: 'error', message: 'Analysis service temporarily unavailable' }],
         found: [],
         analysis: 'Service temporarily unavailable'
       },
       robotsAnalysis: {
         status: 'error',
         summary: 'Unable to analyze robots.txt',
-        details: [
-          { type: 'error', message: 'Analysis service temporarily unavailable' }
-        ]
+        details: [{ type: 'error', message: 'Analysis service temporarily unavailable' }]
       },
       aiSummary: {
         summary: 'Analysis service temporarily unavailable',
-        details: [
-          { type: 'error', message: 'Unable to generate AI analysis' }
-        ],
+        details: [{ type: 'error', message: 'Unable to generate AI analysis' }],
         insights: []
       }
     };
   }
 }
 
-/**
- * Calculates AI readiness score based on various factors
- * @param {Object} factors - Various factors affecting AI readiness
- * @returns {number} Score from 0-100
- */
 function calculateAIReadinessScore(factors) {
   let score = 0;
-  
-  // Base score for having essential elements
   if (factors.hasTitle) score += 20;
   if (factors.hasMetaDescription) score += 15;
   if (factors.contentLength > 500) score += 20;
-  
-  // Structured data bonus
   if (factors.hasStructuredData) score += 25;
-  
-  // Robots.txt bonus
-  if (factors.robotsStatus === 'mostly_allowed' || factors.robotsStatus === 'allowed') {
-    score += 20;
-  } else if (factors.robotsStatus === 'not_found') {
-    score += 10;
-  }
-  
+  if (factors.robotsStatus === 'mostly_allowed' || factors.robotsStatus === 'allowed') score += 20;
+  else if (factors.robotsStatus === 'not_found') score += 10;
   return Math.min(100, Math.max(0, score));
 }
 
-/**
- * Parses structured data into analysis details
- * @param {Object} structuredData - Structured data object
- * @returns {Array} Array of detail objects
- */
 function parseStructuredDataDetails(structuredData) {
   const details = [];
-  
   if (!structuredData || Object.keys(structuredData).length === 0) {
-    details.push({
-      type: 'error',
-      message: 'No structured data found on the page'
-    });
+    details.push({ type: 'error', message: 'No structured data found on the page' });
     return details;
   }
-  
-  // Analyze the structured data
+
   const dataType = structuredData['@type'];
   if (dataType) {
-    details.push({
-      type: 'success',
-      message: `${dataType} schema detected and properly formatted`
-    });
+    details.push({ type: 'success', message: `${dataType} schema detected and properly formatted` });
   }
-  
-  // Check for common important fields
+
   const importantFields = ['name', 'description', 'url', 'image'];
   importantFields.forEach(field => {
-    if (structuredData[field]) {
-      details.push({
-        type: 'success',
-        message: `${field} property is present in structured data`
-      });
-    } else {
-      details.push({
-        type: 'warning',
-        message: `Consider adding ${field} property to structured data`
-      });
-    }
+    details.push({
+      type: structuredData[field] ? 'success' : 'warning',
+      message: structuredData[field]
+        ? `${field} property is present in structured data`
+        : `Consider adding ${field} property to structured data`
+    });
   });
-  
+
   return details;
 }
 
-/**
- * Extracts structured data types from the data object
- * @param {Object} structuredData - Structured data object
- * @returns {Array} Array of structured data types found
- */
 function extractStructuredDataTypes(structuredData) {
   if (!structuredData) return [];
-  
   const types = [];
-  
-  // Handle single object
-  if (structuredData['@type']) {
-    types.push(structuredData['@type']);
-  }
-  
-  // Handle array of objects
+  if (structuredData['@type']) types.push(structuredData['@type']);
   if (Array.isArray(structuredData)) {
     structuredData.forEach(item => {
-      if (item['@type']) {
-        types.push(item['@type']);
-      }
+      if (item['@type']) types.push(item['@type']);
     });
   }
-  
-  return [...new Set(types)]; // Remove duplicates
+  return [...new Set(types)];
 }
 
-/**
- * Generates AI analysis details from the summary
- * @param {string} summary - AI-generated summary
- * @returns {Array} Array of analysis details
- */
 function generateAIAnalysisDetails(summary) {
-  // This would parse the AI summary and extract key points
-  // For now, we'll return a basic structure
   return [
     { type: 'success', message: 'Page content is easily parseable by AI agents' },
     { type: 'info', message: 'AI agents can extract key information effectively' },
