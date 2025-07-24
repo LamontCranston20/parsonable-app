@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import AuthenticationStateHeader from '../../components/ui/AuthenticationStateHeader';
 import HeroSection from './components/HeroSection';
 import BenefitCards from './components/BenefitCards';
 import LoadingState from './components/LoadingState';
