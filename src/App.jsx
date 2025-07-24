@@ -1,11 +1,22 @@
-import React from "react";
-import Routes from "./Routes";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/clerk-react";
 
-function App() {
+export default function App() {
   return (
-    <Routes />
+    <div style={{ textAlign: "center", paddingTop: "40px" }}>
+      <SignedIn>
+        <h2>You're signed in!</h2>
+        <UserButton />
+      </SignedIn>
+
+      <SignedOut>
+        <h2>Please sign in below</h2>
+        <SignInButton />
+      </SignedOut>
+    </div>
   );
 }
-
-export default App;
-// Trigger rebuild
