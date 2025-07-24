@@ -1,22 +1,52 @@
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/clerk-react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
-export default function App() {
+import Homepage from "./pages/homepage-url-analysis";
+import UserDashboard from "./pages/user-dashboard";
+import PremiumResults from "./pages/premium-analysis-results";
+
+function App() {
   return (
-    <div style={{ textAlign: "center", paddingTop: "40px" }}>
-      <SignedIn>
-        <h2>You're signed in!</h2>
-        <UserButton />
-      </SignedIn>
+    <Router>
+      <Routes>
+        {/* Public Homepage */}
+        <Route path="/" element={<Homepage />} />
 
-      <SignedOut>
-        <h2>Please sign in below</h2>
-        <SignInButton />
-      </SignedOut>
-    </div>
+        {/* Private Dashboard Route */}
+        <Route
+          path="/dashboard"
+          element={
+            <>
+              <SignedIn>
+                <UserDashboard />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+
+        {/* Premium Content Route (no payment wall yet) */}
+        <Route
+          path="/premium"
+          element={
+            <>
+              <SignedIn>
+                <PremiumResults />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+
+        {/* Redirect unknown routes to homepage */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
+
+export default App;
