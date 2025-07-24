@@ -65,13 +65,21 @@ const AuthenticationStateHeader = () => {
     if (!isAuthenticated) {
       return (
         <>
-          <Link
-            to="/homepage-url-analysis"
-            className={`${baseClasses} ${isActivePath('/homepage-url-analysis') ? activeClasses : 'text-foreground'}`}
-            onClick={mobile ? closeMobileMenu : undefined}
-          >
-            URL Analysis
-          </Link>
+      <Link
+  to="/login"
+  className={`${baseClasses} ${isActivePath('/login') ? activeClasses : 'text-foreground'}`}
+  onClick={mobile ? closeMobileMenu : undefined}
+>
+  Login
+</Link>
+<Link
+  to="/register"
+  className={`${baseClasses} ${isActivePath('/register') ? activeClasses : 'text-foreground'}`}
+  onClick={mobile ? closeMobileMenu : undefined}
+>
+  Register
+</Link>
+
           <Link
             to="/user-login"
             className={`${baseClasses} ${isActivePath('/user-login') ? activeClasses : 'text-foreground'}`}
