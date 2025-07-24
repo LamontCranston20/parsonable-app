@@ -32,6 +32,7 @@
     "tailwindcss-elevation": "^2.0.0",
     "tailwindcss-fluid-type": "^2.0.7",
     "cheerio": "^1.0.0-rc.12"
+    "@clerk/clerk-react": "^4.64.1"
   },
   "devDependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
