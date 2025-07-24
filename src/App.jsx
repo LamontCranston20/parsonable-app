@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { SignIn, SignUp, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
 import Homepage from "./pages/homepage-url-analysis";
 import UserDashboard from "./pages/user-dashboard";
@@ -9,10 +9,15 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Homepage */}
+        {/* Homepage (public) */}
         <Route path="/" element={<Homepage />} />
+        <Route path="/url-analysis" element={<Homepage />} />
 
-        {/* Private Dashboard Route */}
+        {/* Auth Pages (public but powered by Clerk) */}
+        <Route path="/login" element={<SignIn routing="path" path="/login" />} />
+        <Route path="/register" element={<SignUp routing="path" path="/register" />} />
+
+        {/* User Dashboard (signed-in only) */}
         <Route
           path="/dashboard"
           element={
@@ -27,7 +32,7 @@ function App() {
           }
         />
 
-        {/* Premium Content Route (no payment wall yet) */}
+        {/* Premium Results (signed-in only for now) */}
         <Route
           path="/premium"
           element={
@@ -42,7 +47,7 @@ function App() {
           }
         />
 
-        {/* Redirect unknown routes to homepage */}
+        {/* Catch-all route (redirect to homepage) */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
