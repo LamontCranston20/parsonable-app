@@ -1,14 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist'
   },
   server: {
-    // This is critical for client-side routing to work in Vercel (SPA mode)
-    historyApiFallback: true
+    fs: {
+      allow: ['.'],
+    },
+    historyApiFallback: true, // 👈 THIS is what ensures routing works
   }
 });
